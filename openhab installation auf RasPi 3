@@ -1,0 +1,165 @@
+Download  
+https://downloads.raspberrypi.org/raspbian_lite_latest
+
+Kopie am Mac auf SD Karte
+ sudo dd bs=1m if=2016-11-25-raspbian-jessie-lite.img of=/dev/rdisk3
+ 
+Anmelden an Konsole (TV)
+sudo raspi-config
+
+  SSH Aktiviern
+  Expand Filesystem
+  Hostname ändern
+  How much memory should the GPU have?  auf 16 stellen
+  Zeitzone auf Europa / Berlin stellen
+  
+Ab jetzt ist der Zugriff über SSH möglich.
+ssh pi@192.168.178.34
+
+Der SSH Key muss beim ersten login bestätigt werden
+The authenticity of host '192.168.178.34 (192.168.178.34)' can't be established.
+ECDSA key fingerprint is SHA256:Q8.....
+Are you sure you want to continue connecting (yes/no)? yes
+
+
+Debian Pakete aktuallisieren
+   sudo apt-get update
+   
+   sudo apt-get install screen mc vim git htop
+   sudo apt-get install oracle-java8-jdk
+   
+Installation OpenHAB 2 Beta Repository
+  ***   echo 'deb http://dl.bintray.com/openhab/apt-repo2 testing main' | sudo tee /etc/apt/sources.list.d/openhab2.list
+   echo 'deb http://dl.bintray.com/openhab/apt-repo2 stable main' | sudo tee /etc/apt/sources.list.d/openhab2.list 
+
+   wget -qO - 'https://bintray.com/user/downloadSubjectPublicKey?username=openhab' | sudo apt-key add -
+   
+   sudo apt-get update
+
+   sudo apt-get install openhab2-online
+      
+openHAB in Autostart eintragen
+
+   sudo /bin/systemctl daemon-reload
+   sudo /bin/systemctl enable openhab2.service
+
+
+   * sudo systemctl daemon-reload
+   * sudo systemctl enable openhab2.service
+   
+   * sudo systemctl start openhab2.service
+   * sudo systemctl status openhab2.service
+
+   sudo apt-get upgrade
+   
+sudo reboot
+
+Überprüfen ob der Service automatisch startet
+systemctl status openhab2.service
+● openhab2.service - openHAB 2 - empowering the smart home
+   Loaded: loaded (/usr/lib/systemd/system/openhab2.service; enabled)
+   Active: active (running) since Sun 2016-12-04 17:32:26 UTC; 2min 34s ago
+     Docs: http://docs.openhab.org
+           https://community.openhab.org
+ Main PID: 701 (karaf)
+   CGroup: /system.slice/openhab2.service
+           ├─701 /bin/sh /usr/share/openhab2/runtime/karaf/bin/karaf server
+           └─846 /usr/bin/java -Dopenhab.home=/usr/share/openhab2 -Dopenhab.conf=/etc/openhab2 -Dopenhab.runtime=/usr/share/openhab...
+
+Dec 04 17:32:26 openHAB systemd[1]: Started openHAB 2 - empowering the smart home.
+Dec 04 17:32:26 openHAB start.sh[701]: Launching the openHAB runtime...
+
+Über den Browser kann man OpenHab öffnen
+http://192.168.178.34:8080/start/index
+
+Über PaperUI konfigurieren
+http://192.168.178.34:8080/ui/index.html#/control
+
+System  Configuration
+   Extension Management
+      Access Remote Repositories einschalten
+      Include Experimental Extensions einschlaten
+   Item Linking
+      Simple Mode einschalten
+   Locale
+      de & DE eintragen
+      
+Extension
+   Bindings hinzufügen
+      Astro
+      AVM
+      Weather
+      z-Wave Binding
+   User INterface 
+      HABMIN
+   Persitance
+      rrd4j
+      
+
+   
+   sudo adduser openhab dialout
+   sudo adduser openhab tty
+   sudo adduser pi tty
+   
+* Nihct mehr notwendig
+* sudo nano /usr/share/openhab2/runtime/karaf/bin/setenv
+   
+   export JAVA_OPTS="${JAVA_OPTS}
+  -Dopenhab.home=${OPENHAB_HOME}
+  -Dopenhab.conf=${OPENHAB_CONF}
+  -Dopenhab.runtime=${OPENHAB_RUNTIME}
+  -Dopenhab.userdata=${OPENHAB_USERDATA}
+  -Dopenhab.logdir=${OPENHAB_LOGDIR}
+  -Dgnu.io.rxtx.SerialPorts=/dev/ttyS0:/dev/ttyUSB0  >>>  Diese Zeile ergänzt
+  -Dorg.osgi.service.http.port=${HTTP_PORT}
+  -Dorg.osgi.service.http.port.secure=${HTTPS_PORT}"
+
+Bluetooth disabled
+  /boot/config.txt
+  # Enable UART      
+enable_uart=1
+
+sudo nano /boot/cmdline.txt 
+Folgende Zeile gelöscht
+   dwc_otg.lpm_enable=0 console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwa$
+
+Folgende Zeile eingetragen
+   dwc_otg.lpm_enable=0 console=tty1 elevator=deadline net.ifnames=0 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
+
+Configuration Z-Wave Controller
+   Serial Port  /dev/ttyS0
+
+  sudo reboot
+  
+SAMBA einrichten
+  sudo apt-get install samba samba-common-bin
+  sudo nano /etc/samba/smb.conf
+  
+  Am Ende ergänzen
+[openHAB2-userdata]
+  comment=openHAB2 userdata
+  path=/var/lib/openhab2
+  browseable=Yes
+  writeable=Yes
+  only guest=no
+  public=no
+  create mask=0777
+  directory mask=0777
+
+[openHAB2-conf]
+  comment=openHAB2 site configuration
+  path=/etc/openhab2
+  browseable=Yes
+  writeable=Yes
+  only guest=no
+  public=no
+  create mask=0777
+  directory mask=0777
+  
+  sudo smbpasswd -a openhab
+  >>>  habopen
+  
+  sudo chown -hR openhab:openhab /etc/openhab2 
+  
+  
+Erstellen Cron Tab  http://www.cronmaker.com/  
