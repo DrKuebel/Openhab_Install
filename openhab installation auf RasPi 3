@@ -101,7 +101,7 @@ Extension
    sudo adduser openhab tty
    sudo adduser pi tty
    
-* Nihct mehr notwendig
+* Nicht mehr notwendig
 * sudo nano /usr/share/openhab2/runtime/karaf/bin/setenv
    
    export JAVA_OPTS="${JAVA_OPTS}
@@ -157,7 +157,7 @@ SAMBA einrichten
   directory mask=0777
   
   sudo smbpasswd -a openhab
-  >>>  habopen
+  >>>  xxx
   
   sudo chown -hR openhab:openhab /etc/openhab2 
   
